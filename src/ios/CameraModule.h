@@ -3,7 +3,7 @@
 
 @interface CameraModule : CDVPlugin  
 
-+ (void)getPicture:(CDVInvokedUrlCommand *)command;
+- (void)getPicture:(CDVInvokedUrlCommand *)command;
 
 @end
 
