@@ -4,19 +4,14 @@ var argscheck = require('cordova/argscheck'),
     exec = require('cordova/exec');
 
 
-var AudioProcessor = function() {
+var CameraModule = function() {
 };
 
-AudioProcessor.start = function(successCallback, errorCallback, param) {
-  exec(successCallback, errorCallback, "CameraModule", "start", [param]);
+CameraModule.getPicture = function(successCallback, errorCallback) {
+  exec(successCallback, errorCallback, "CameraModule", "start", []);
 };
 
-AudioProcessor.stop = function(successCallback, errorCallback, param) {
-  exec(successCallback, errorCallback, "CameraModule", "stop", [param]);
-};
-
-
-module.exports = AudioProcessor;
+module.exports = CameraModule;
 
 
 
