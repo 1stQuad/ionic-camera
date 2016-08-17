@@ -23,6 +23,8 @@
         </config-file>
         <header-file src="src/ios/CameraModule.h" />
         <source-file src="src/ios/CameraModule.m" />
+        <header-file src="src/ios/CameraModuleView.h" />
+        <source-file src="src/ios/CameraModuleView.m" />
     </platform>
 
 </plugin>
