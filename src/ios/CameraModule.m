@@ -1,6 +1,6 @@
 #import "CameraModule.h"
 //#import <Cordova/CDVAvailability.h>
-#import "AAPLPreviewView.h"
+//#import "AAPLPreviewView.h"
 
 
 @interface CameraModule()
@@ -22,12 +22,12 @@
   
     CDVPluginResult *pluginResult;
     
-    UIView *camView = [[AAPLPreviewView alloc] initWithFrame:self.viewController.view.frame];
-    UIViewController *camController = [[UIViewController alloc] init];
-    camController.view = camView;
-    [self.viewController presentViewController:camController animated:YES completion:^{
+    //UIView *camView = [[AAPLPreviewView alloc] initWithFrame:self.viewController.view.frame];
+    //UIViewController *camController = [[UIViewController alloc] init];
+    //camController.view = camView;
+    //[self.viewController presentViewController:camController animated:YES completion:^{
     
-    }];
+    //}];
     
     if (hasError == NO) {
     _callbackId = command.callbackId;
