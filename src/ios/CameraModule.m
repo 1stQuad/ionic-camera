@@ -60,7 +60,7 @@ typedef NS_ENUM( NSInteger, AVCamSetupResult ) {
     if (hasError == NO) {
         _callbackId = command.callbackId;
     } else {
-    pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Has error"];
+        pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Has error"];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     }
 }
@@ -126,6 +126,9 @@ typedef NS_ENUM( NSInteger, AVCamSetupResult ) {
     // so that the main queue isn't blocked, which keeps the UI responsive.
     dispatch_async( self.sessionQueue, ^{
         if ( self.setupResult != AVCamSetupResultSuccess ) {
+            CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:NSLocalizedString(@"Camera is not available", "error message")];
+            [self.commandDelegate sendPluginResult:pluginResult callbackId:self.callbackId];
+            [self closeCam];
             return;
         }
         
@@ -222,6 +225,16 @@ typedef NS_ENUM( NSInteger, AVCamSetupResult ) {
     AVCaptureVideoPreviewLayer *previewLayer = (AVCaptureVideoPreviewLayer *)self.previewView.layer;
     previewLayer.connection.videoOrientation = initialVideoOrientation;
 
+}
+
+- (void)closeCam
+{
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [self.viewController dismissViewControllerAnimated:YES completion:^{
+            
+        }];
+        [self viewDidDisappear:YES];
+    });
 }
 
 - (void)viewWillAppear:(BOOL)animated
@@ -334,11 +347,8 @@ typedef NS_ENUM( NSInteger, AVCamSetupResult ) {
                 
                 dispatch_async(dispatch_get_main_queue(), ^{
                     [self.commandDelegate sendPluginResult:result callbackId:self.callbackId];
-                    [self.viewController dismissViewControllerAnimated:YES completion:^{
-                        
-                    }];
-                    [self viewDidDisappear:YES];
                 });
+                [self closeCam];
                 
 
             }
