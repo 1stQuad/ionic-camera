@@ -258,19 +258,6 @@ typedef NS_ENUM( NSInteger, AVCamSetupResult ) {
             self.setupResult = AVCamSetupResultSessionConfigurationFailed;
         }
         
-        AVCaptureDevice *audioDevice = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeAudio];
-        AVCaptureDeviceInput *audioDeviceInput = [AVCaptureDeviceInput deviceInputWithDevice:audioDevice error:&error];
-        
-        if ( ! audioDeviceInput ) {
-            NSLog( @"Could not create audio device input: %@", error );
-        }
-        
-        if ( [self.session canAddInput:audioDeviceInput] ) {
-            [self.session addInput:audioDeviceInput];
-        }
-        else {
-            NSLog( @"Could not add audio device input to the session" );
-        }
         
         AVCaptureMovieFileOutput *movieFileOutput = [[AVCaptureMovieFileOutput alloc] init];
         if ( [self.session canAddOutput:movieFileOutput] ) {
