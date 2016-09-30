@@ -11,7 +11,9 @@ CameraModule.getPicture = function(successCallback, errorCallback) {
   exec(successCallback, errorCallback, "CameraModule", "getPicture", []);
 };
 
+CameraModule.pictureRecognized = function () {
+    exec(null, null, "CameraModule", "pictureRecognized", []);
+};
+
 module.exports = CameraModule;
-
-
 
