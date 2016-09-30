@@ -25,6 +25,10 @@
         <source-file src="src/ios/CameraModule.m" />
         <header-file src="src/ios/CameraModuleView.h" />
         <source-file src="src/ios/CameraModuleView.m" />
+        <resource-file src="moneyFrame.png" />
+        <resource-file src="moneyFrame@2x.png" />
+        <resource-file src="backButtonWhiteArrow.png" />
+        <resource-file src="backButtonWhiteArrow@2x.png" />
     </platform>
 
 </plugin>
