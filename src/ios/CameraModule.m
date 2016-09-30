@@ -40,6 +40,8 @@ typedef NS_ENUM( NSInteger, AVCamSetupResult ) {
 @property (nonatomic, assign) int targetWidth;
 @property (nonatomic, assign) int targetHeight;
 
+@property (nonatomic, strong) UIImageView *camFrame;
+
 @end
 
 
@@ -65,19 +67,103 @@ typedef NS_ENUM( NSInteger, AVCamSetupResult ) {
     }
 }
 
+- (void)backPressed
+{
+    [self closeCam];
+}
+
 #pragma mark - Processing
 
 - (void)setupView
 {
+    
+    
     UIViewController *vc = [[UIViewController alloc] init];
     
     vc.view = [[CameraModuleView alloc] initWithFrame:self.viewController.view.frame];
     self.previewView = (CameraModuleView *) vc.view;
     [vc.view addGestureRecognizer:[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(snapStillImage:)]];
+    self.camFrame = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"moneyFrame.png"]];
+    [self.camFrame setUserInteractionEnabled:NO];
+
     
     [self.viewController presentViewController:vc animated:YES completion:^{
+        [vc.view addSubview:self.camFrame];
+        self.camFrame.translatesAutoresizingMaskIntoConstraints = NO;
+        
+        NSLayoutConstraint *xCenterConstraint = [NSLayoutConstraint constraintWithItem:self.camFrame attribute:NSLayoutAttributeCenterX relatedBy:NSLayoutRelationEqual toItem:vc.view attribute:NSLayoutAttributeCenterX multiplier:1.0 constant:0];
+        [vc.view addConstraint:xCenterConstraint];
+    
+        
+        NSLayoutConstraint *yCenterConstraint = [NSLayoutConstraint constraintWithItem:self.camFrame attribute:NSLayoutAttributeCenterY relatedBy:NSLayoutRelationEqual toItem:vc.view attribute:NSLayoutAttributeCenterY multiplier:1.0 constant:0];
+        
+        [vc.view addConstraint:yCenterConstraint];
+        
+        [self setupOrientatedCamFrame];
         [self viewWillAppear:NO];
+        
+        
+        
+        //setup navigation bar
+        UINavigationBar *myNav = [[UINavigationBar alloc] init];
+
+//        UINavigationBar *myNav = [[UINavigationBar alloc]initWithFrame:CGRectMake(0, 0, 320, 55)];
+        [UINavigationBar appearance].barTintColor = [UIColor blackColor];
+        [vc.view addSubview:myNav];
+        myNav.translatesAutoresizingMaskIntoConstraints = NO;
+        
+        
+        UIBarButtonItem *cancelItem = [[UIBarButtonItem alloc] initWithTitle:NSLocalizedString(@"Back", @"nav bar button label")
+                                                                       style:UIBarButtonItemStylePlain
+                                                                      target:self
+                                                                      action:@selector(backPressed)];
+        cancelItem.image = [UIImage imageNamed:@"backButtonWhiteArrow.png"];
+        UINavigationItem *navigItem = [[UINavigationItem alloc] initWithTitle:@""];
+
+        
+        navigItem.leftBarButtonItem = cancelItem;
+        myNav.items = [NSArray arrayWithObjects: navigItem,nil];
+        cancelItem.tintColor = [UIColor whiteColor];
+        
+        [UIBarButtonItem appearance].tintColor = [UIColor whiteColor];
+        
+        CGFloat navigationBarHeight = 55.f;// + [UIApplication sharedApplication].statusBarFrame.size.height;
+        [vc.view addConstraints: @[
+                                     [NSLayoutConstraint constraintWithItem: vc.view
+                                                                  attribute: NSLayoutAttributeLeft
+                                                                  relatedBy: NSLayoutRelationEqual
+                                                                     toItem: myNav
+                                                                  attribute: NSLayoutAttributeLeft
+                                                                 multiplier: 1.0
+                                                                   constant: 0.0],
+                                     [NSLayoutConstraint constraintWithItem: vc.view
+                                                                  attribute: NSLayoutAttributeRight
+                                                                  relatedBy: NSLayoutRelationEqual
+                                                                     toItem: myNav
+                                                                  attribute: NSLayoutAttributeRight
+                                                                 multiplier: 1.0
+                                                                   constant: 0.0],
+                                     [NSLayoutConstraint constraintWithItem: vc.topLayoutGuide
+                                                                  attribute: NSLayoutAttributeTop
+                                                                  relatedBy: NSLayoutRelationEqual
+                                                                     toItem: myNav
+                                                                  attribute: NSLayoutAttributeTop
+                                                                 multiplier: 1.0
+                                                                   constant: 0.0],
+                                     [NSLayoutConstraint constraintWithItem: myNav
+                                                                  attribute: NSLayoutAttributeHeight
+                                                                  relatedBy: NSLayoutRelationEqual
+                                                                     toItem: nil
+                                                                  attribute: NSLayoutAttributeNotAnAttribute
+                                                                 multiplier: 1.0
+                                                                   constant: navigationBarHeight],
+                                     ]];
+        
+
     }];
+    
+    
+    
     // Create the AVCaptureSession.
     self.session = [[AVCaptureSession alloc] init];
     
@@ -85,7 +171,7 @@ typedef NS_ENUM( NSInteger, AVCamSetupResult ) {
     self.previewView.session = self.session;
     
     // Communicate with the session and other session objects on this queue.
-    self.sessionQueue = dispatch_queue_create( "session queue", DISPATCH_QUEUE_SERIAL );
+    self.sessionQueue = dispatch_queue_create("session queue", DISPATCH_QUEUE_SERIAL );
     
     //    self.setupResult = AVCamSetupResultSuccess;
     
@@ -128,7 +214,7 @@ typedef NS_ENUM( NSInteger, AVCamSetupResult ) {
         if ( self.setupResult != AVCamSetupResultSuccess ) {
             CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:NSLocalizedString(@"Camera is not available", "error message")];
             [self.commandDelegate sendPluginResult:pluginResult callbackId:self.callbackId];
-            [self closeCam];
+//            [self closeCam];
             return;
         }
         
@@ -215,6 +301,7 @@ typedef NS_ENUM( NSInteger, AVCamSetupResult ) {
     } );
 }
 
+
 - (void)orientationChanged:(NSNotification *)notification{
     NSLog(@"rot");
     UIInterfaceOrientation statusBarOrientation = [UIApplication sharedApplication].statusBarOrientation;
@@ -224,7 +311,36 @@ typedef NS_ENUM( NSInteger, AVCamSetupResult ) {
     }
     AVCaptureVideoPreviewLayer *previewLayer = (AVCaptureVideoPreviewLayer *)self.previewView.layer;
     previewLayer.connection.videoOrientation = initialVideoOrientation;
+    [self setupOrientatedCamFrame];
 
+}
+
+- (UIImage *)rotateImage:(UIImage *)image onDegrees:(float)degrees
+{
+    CGFloat rads = M_PI * degrees / 180;
+    float newSide = MAX([image size].width, [image size].height);
+    CGSize size =  CGSizeMake(newSide, newSide);
+    UIGraphicsBeginImageContext(size);
+    CGContextRef ctx = UIGraphicsGetCurrentContext();
+    CGContextTranslateCTM(ctx, newSide/2, newSide/2);
+    CGContextRotateCTM(ctx, rads);
+    CGContextDrawImage(UIGraphicsGetCurrentContext(),CGRectMake(-[image size].width/2,-[image size].height/2,size.width, size.height),image.CGImage);
+    UIImage *i = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    return i;
+}
+
+- (void)setupOrientatedCamFrame
+{
+    UIInterfaceOrientation statusBarOrientation = [UIApplication sharedApplication].statusBarOrientation;
+    if (statusBarOrientation == AVCaptureVideoOrientationLandscapeRight || statusBarOrientation == AVCaptureVideoOrientationLandscapeLeft) {
+        [self.camFrame setTransform:CGAffineTransformMakeRotation(M_PI * (90) / 180.0)];
+        
+    }
+    else
+    {
+        [self.camFrame setTransform:CGAffineTransformMakeRotation(M_PI * (0) / 180.0)];
+    }
 }
 
 - (void)closeCam
@@ -239,7 +355,6 @@ typedef NS_ENUM( NSInteger, AVCamSetupResult ) {
 
 - (void)viewWillAppear:(BOOL)animated
 {
-    
     dispatch_async( self.sessionQueue, ^{
         switch ( self.setupResult )
         {
@@ -280,6 +395,7 @@ typedef NS_ENUM( NSInteger, AVCamSetupResult ) {
             }
         }
     } );
+
 }
 
 + (void)setFlashMode:(AVCaptureFlashMode)flashMode forDevice:(AVCaptureDevice *)device
@@ -341,16 +457,13 @@ typedef NS_ENUM( NSInteger, AVCamSetupResult ) {
                 NSURL *temporaryFileURL = [NSURL fileURLWithPath:temporaryFilePath];
                 [imageData writeToURL:temporaryFileURL options:NSDataWritingAtomic error:&error];
                 
-                
-                CDVPluginResult* result = nil;
+                CDVPluginResult *result = nil;
                 result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:[[self urlTransformer:temporaryFileURL] absoluteString]];
                 
                 dispatch_async(dispatch_get_main_queue(), ^{
                     [self.commandDelegate sendPluginResult:result callbackId:self.callbackId];
                 });
-                [self closeCam];
-                
-
+//                [self closeCam];
             }
             else {
                 NSLog( @"Could not capture still image: %@", error );

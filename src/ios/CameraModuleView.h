@@ -13,5 +13,5 @@ Application preview view.
 @interface CameraModuleView : UIView
 
 @property (nonatomic) AVCaptureSession *session;
-
+@property (nonatomic, strong) UIImageView *camFrame;
 @end
