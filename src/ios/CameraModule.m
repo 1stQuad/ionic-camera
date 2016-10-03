@@ -41,6 +41,13 @@ typedef NS_ENUM( NSInteger, AVCamSetupResult ) {
 @property (nonatomic, assign) int targetHeight;
 
 @property (nonatomic, strong) UIImageView *camFrame;
+@property (nonatomic, strong) UIImageView *takedPhoto;
+
+@property (nonatomic, strong) UIActivityIndicatorView *spinner;
+@property (nonatomic, strong) UIImageView *spinnerBackView;
+
+@property (assign) BOOL isRecognizing;
+@property (assign) BOOL photoIsVisible;
 
 @end
 
@@ -67,40 +74,119 @@ typedef NS_ENUM( NSInteger, AVCamSetupResult ) {
     }
 }
 
+- (void)pictureRecognized:(id)something
+{
+    self.isRecognizing = false;
+
+    [self stopSpining];
+}
+
 - (void)backPressed
 {
     [self closeCam];
+    CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"cancelled"];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:_callbackId];
+}
+
+#pragma mark -
+- (void)imageTaked:(UIImage *)img
+{
+    self.takedPhoto.backgroundColor = [UIColor blackColor];
+    self.takedPhoto.image =  img;
+    self.takedPhoto.contentMode = UIViewContentModeScaleAspectFit;
+    self.photoIsVisible = YES;
+
+    [self setupOrientatedCamFrame];
+    self.isRecognizing = YES;
+    [self startSpining];
+}
+
+- (void)hideTakenPhoto
+{
+    self.takedPhoto.backgroundColor = [UIColor clearColor];
+    self.takedPhoto.image = nil;
+    self.photoIsVisible = NO;
+}
+
+- (void)startSpining
+{
+    self.spinner.hidden = NO;
+    self.spinnerBackView.hidden = NO;
+
+    [self.spinner startAnimating];
+}
+
+- (void)stopSpining
+{
+    self.spinner.hidden = YES;
+    self.spinnerBackView.hidden = YES;
+    [self.spinner stopAnimating];
 }
 
 #pragma mark - Processing
 
 - (void)setupView
 {
-    
+    self.isRecognizing = NO;
+    self.photoIsVisible = NO;
+    __weak CameraModule *wself = self;
     
     UIViewController *vc = [[UIViewController alloc] init];
     
     vc.view = [[CameraModuleView alloc] initWithFrame:self.viewController.view.frame];
     self.previewView = (CameraModuleView *) vc.view;
     [vc.view addGestureRecognizer:[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(snapStillImage:)]];
+    
+    
+    
     self.camFrame = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"moneyFrame.png"]];
     [self.camFrame setUserInteractionEnabled:NO];
 
     
-    [self.viewController presentViewController:vc animated:YES completion:^{
-        [vc.view addSubview:self.camFrame];
-        self.camFrame.translatesAutoresizingMaskIntoConstraints = NO;
-        
-        NSLayoutConstraint *xCenterConstraint = [NSLayoutConstraint constraintWithItem:self.camFrame attribute:NSLayoutAttributeCenterX relatedBy:NSLayoutRelationEqual toItem:vc.view attribute:NSLayoutAttributeCenterX multiplier:1.0 constant:0];
-        [vc.view addConstraint:xCenterConstraint];
     
+    [self.viewController presentViewController:vc animated:YES completion:^{
+        [vc.view addSubview:wself.camFrame];
+        wself.camFrame.translatesAutoresizingMaskIntoConstraints = NO;
         
-        NSLayoutConstraint *yCenterConstraint = [NSLayoutConstraint constraintWithItem:self.camFrame attribute:NSLayoutAttributeCenterY relatedBy:NSLayoutRelationEqual toItem:vc.view attribute:NSLayoutAttributeCenterY multiplier:1.0 constant:0];
-        
+        NSLayoutConstraint *xCenterConstraint = [NSLayoutConstraint constraintWithItem:wself.camFrame attribute:NSLayoutAttributeCenterX relatedBy:NSLayoutRelationEqual toItem:vc.view attribute:NSLayoutAttributeCenterX multiplier:1.0 constant:0];
+        [vc.view addConstraint:xCenterConstraint];
+        NSLayoutConstraint *yCenterConstraint = [NSLayoutConstraint constraintWithItem:wself.camFrame attribute:NSLayoutAttributeCenterY relatedBy:NSLayoutRelationEqual toItem:vc.view attribute:NSLayoutAttributeCenterY multiplier:1.0 constant:0];
         [vc.view addConstraint:yCenterConstraint];
         
-        [self setupOrientatedCamFrame];
-        [self viewWillAppear:NO];
+        
+        //setup view for taked photo
+        wself.takedPhoto = [[UIImageView alloc] init];
+        wself.takedPhoto.frame = wself.viewController.view.frame;
+        [wself.previewView addSubview:wself.takedPhoto];
+  
+        [wself setupOrientatedCamFrame];
+
+        wself.spinnerBackView = [[UIImageView alloc] initWithFrame:CGRectMake(0,0,70,70)];
+        wself.spinnerBackView.backgroundColor = [UIColor blackColor];
+        wself.spinnerBackView.layer.cornerRadius = 10.0;
+        wself.spinnerBackView.translatesAutoresizingMaskIntoConstraints = NO;
+        wself.spinner = [[UIActivityIndicatorView alloc]initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleWhiteLarge];
+        wself.spinner.frame = CGRectMake((wself.spinnerBackView.frame.size.width-wself.spinner.frame.size.width)/2,
+                                         (wself.spinnerBackView.frame.size.height-wself.spinner.frame.size.height)/2,
+                                         wself.spinner.frame.size.width,
+                                         wself.spinner.frame.size.height);
+        
+        [wself.spinnerBackView addSubview:wself.spinner];
+        [wself.takedPhoto addSubview:wself.spinnerBackView];
+        
+        NSLayoutConstraint *xSpinCenterConstraint = [NSLayoutConstraint constraintWithItem:wself.spinnerBackView attribute:NSLayoutAttributeCenterX relatedBy:NSLayoutRelationEqual toItem:wself.takedPhoto attribute:NSLayoutAttributeCenterX multiplier:1.0 constant:0];
+        [wself.takedPhoto addConstraint:xSpinCenterConstraint];
+        NSLayoutConstraint *ySpinCenterConstraint = [NSLayoutConstraint constraintWithItem:wself.spinnerBackView attribute:NSLayoutAttributeCenterY relatedBy:NSLayoutRelationEqual toItem:wself.takedPhoto attribute:NSLayoutAttributeCenterY multiplier:1.0 constant:0];
+        [wself.takedPhoto addConstraint:ySpinCenterConstraint];
+        
+        NSLayoutConstraint *wSpinCenterConstraint = [NSLayoutConstraint constraintWithItem:wself.spinnerBackView attribute:NSLayoutAttributeWidth relatedBy:NSLayoutRelationEqual toItem:nil attribute:NSLayoutAttributeNotAnAttribute multiplier:1.0 constant:70];
+        [wself.takedPhoto addConstraint:wSpinCenterConstraint];
+        NSLayoutConstraint *hSpinCenterConstraint = [NSLayoutConstraint constraintWithItem:wself.spinnerBackView attribute:NSLayoutAttributeHeight relatedBy:NSLayoutRelationEqual toItem:nil attribute:NSLayoutAttributeNotAnAttribute multiplier:1.0 constant:70];
+        [wself.takedPhoto addConstraint:hSpinCenterConstraint];
+        
+        wself.spinner.hidden = YES;
+        wself.spinnerBackView.hidden = YES;
+        [wself viewWillAppear:NO];
         
         
         
@@ -109,13 +195,13 @@ typedef NS_ENUM( NSInteger, AVCamSetupResult ) {
 
 //        UINavigationBar *myNav = [[UINavigationBar alloc]initWithFrame:CGRectMake(0, 0, 320, 55)];
         [UINavigationBar appearance].barTintColor = [UIColor blackColor];
-        [vc.view addSubview:myNav];
+        [wself.previewView addSubview:myNav];
         myNav.translatesAutoresizingMaskIntoConstraints = NO;
         
         
         UIBarButtonItem *cancelItem = [[UIBarButtonItem alloc] initWithTitle:NSLocalizedString(@"Back", @"nav bar button label")
                                                                        style:UIBarButtonItemStylePlain
-                                                                      target:self
+                                                                      target:wself
                                                                       action:@selector(backPressed)];
         cancelItem.image = [UIImage imageNamed:@"backButtonWhiteArrow.png"];
         UINavigationItem *navigItem = [[UINavigationItem alloc] initWithTitle:@""];
@@ -191,9 +277,9 @@ typedef NS_ENUM( NSInteger, AVCamSetupResult ) {
             dispatch_suspend( self.sessionQueue );
             [AVCaptureDevice requestAccessForMediaType:AVMediaTypeVideo completionHandler:^( BOOL granted ) {
                 if ( ! granted ) {
-                    self.setupResult = AVCamSetupResultCameraNotAuthorized;
+                    wself.setupResult = AVCamSetupResultCameraNotAuthorized;
                 }
-                dispatch_resume( self.sessionQueue );
+                dispatch_resume( wself.sessionQueue );
             }];
             break;
         }
@@ -211,14 +297,14 @@ typedef NS_ENUM( NSInteger, AVCamSetupResult ) {
     // Because -[AVCaptureSession startRunning] is a blocking call which can take a long time. We dispatch session setup to the sessionQueue
     // so that the main queue isn't blocked, which keeps the UI responsive.
     dispatch_async( self.sessionQueue, ^{
-        if ( self.setupResult != AVCamSetupResultSuccess ) {
+        if ( wself.setupResult != AVCamSetupResultSuccess ) {
             CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:NSLocalizedString(@"Camera is not available", "error message")];
-            [self.commandDelegate sendPluginResult:pluginResult callbackId:self.callbackId];
+            [wself.commandDelegate sendPluginResult:pluginResult callbackId:wself.callbackId];
 //            [self closeCam];
             return;
         }
         
-        self.backgroundRecordingID = UIBackgroundTaskInvalid;
+        wself.backgroundRecordingID = UIBackgroundTaskInvalid;
         NSError *error = nil;
         
         AVCaptureDevice *videoDevice = [CameraModule deviceWithMediaType:AVMediaTypeVideo preferringPosition:AVCaptureDevicePositionBack];
@@ -228,11 +314,11 @@ typedef NS_ENUM( NSInteger, AVCamSetupResult ) {
             NSLog( @"Could not create video device input: %@", error );
         }
         
-        [self.session beginConfiguration];
+        [wself.session beginConfiguration];
         
-        if ( [self.session canAddInput:videoDeviceInput] ) {
-            [self.session addInput:videoDeviceInput];
-            self.videoDeviceInput = videoDeviceInput;
+        if ( [wself.session canAddInput:videoDeviceInput] ) {
+            [wself.session addInput:videoDeviceInput];
+            wself.videoDeviceInput = videoDeviceInput;
             
             dispatch_async( dispatch_get_main_queue(), ^{
                 // Why are we dispatching this to the main queue?
@@ -249,42 +335,42 @@ typedef NS_ENUM( NSInteger, AVCamSetupResult ) {
                     initialVideoOrientation = (AVCaptureVideoOrientation)statusBarOrientation;
                 }
                 
-                AVCaptureVideoPreviewLayer *previewLayer = (AVCaptureVideoPreviewLayer *)self.previewView.layer;
+                AVCaptureVideoPreviewLayer *previewLayer = (AVCaptureVideoPreviewLayer *)wself.previewView.layer;
                 previewLayer.connection.videoOrientation = initialVideoOrientation;
             } );
         }
         else {
             NSLog( @"Could not add video device input to the session" );
-            self.setupResult = AVCamSetupResultSessionConfigurationFailed;
+            wself.setupResult = AVCamSetupResultSessionConfigurationFailed;
         }
         
         
         AVCaptureMovieFileOutput *movieFileOutput = [[AVCaptureMovieFileOutput alloc] init];
-        if ( [self.session canAddOutput:movieFileOutput] ) {
-            [self.session addOutput:movieFileOutput];
+        if ( [wself.session canAddOutput:movieFileOutput] ) {
+            [wself.session addOutput:movieFileOutput];
             AVCaptureConnection *connection = [movieFileOutput connectionWithMediaType:AVMediaTypeVideo];
             if ( connection.isVideoStabilizationSupported ) {
                 connection.preferredVideoStabilizationMode = AVCaptureVideoStabilizationModeAuto;
             }
-            self.movieFileOutput = movieFileOutput;
+            wself.movieFileOutput = movieFileOutput;
         }
         else {
             NSLog( @"Could not add movie file output to the session" );
-            self.setupResult = AVCamSetupResultSessionConfigurationFailed;
+            wself.setupResult = AVCamSetupResultSessionConfigurationFailed;
         }
         
         AVCaptureStillImageOutput *stillImageOutput = [[AVCaptureStillImageOutput alloc] init];
-        if ( [self.session canAddOutput:stillImageOutput] ) {
+        if ( [wself.session canAddOutput:stillImageOutput] ) {
             stillImageOutput.outputSettings = @{AVVideoCodecKey : AVVideoCodecJPEG};
-            [self.session addOutput:stillImageOutput];
-            self.stillImageOutput = stillImageOutput;
+            [wself.session addOutput:stillImageOutput];
+            wself.stillImageOutput = stillImageOutput;
         }
         else {
             NSLog( @"Could not add still image output to the session" );
-            self.setupResult = AVCamSetupResultSessionConfigurationFailed;
+            wself.setupResult = AVCamSetupResultSessionConfigurationFailed;
         }
         
-        [self.session commitConfiguration];
+        [wself.session commitConfiguration];
     } );
 }
 
@@ -322,35 +408,38 @@ typedef NS_ENUM( NSInteger, AVCamSetupResult ) {
     UIInterfaceOrientation statusBarOrientation = [UIApplication sharedApplication].statusBarOrientation;
     if (statusBarOrientation == AVCaptureVideoOrientationLandscapeRight || statusBarOrientation == AVCaptureVideoOrientationLandscapeLeft) {
         [self.camFrame setTransform:CGAffineTransformMakeRotation(M_PI * (90) / 180.0)];
-        
     }
     else
     {
         [self.camFrame setTransform:CGAffineTransformMakeRotation(M_PI * (0) / 180.0)];
     }
+    self.takedPhoto.frame = self.previewView.frame;
+
 }
 
 - (void)closeCam
 {
+    __weak CameraModule *wself = self;
     dispatch_async(dispatch_get_main_queue(), ^{
-        [self.viewController dismissViewControllerAnimated:YES completion:^{
+        [wself.viewController dismissViewControllerAnimated:YES completion:^{
             
         }];
-        [self viewDidDisappear:YES];
+        [wself viewDidDisappear:YES];
     });
 }
 
 - (void)viewWillAppear:(BOOL)animated
 {
+    __weak CameraModule *wself = self;
     dispatch_async( self.sessionQueue, ^{
-        switch ( self.setupResult )
+        switch ( wself.setupResult )
         {
             case AVCamSetupResultSuccess:
             {
                 // Only setup observers and start the session running if setup succeeded.
-                [self addObservers];
-                [self.session startRunning];
-                self.sessionRunning = self.session.isRunning;
+                [wself addObservers];
+                [wself.session startRunning];
+                wself.sessionRunning = wself.session.isRunning;
                 break;
             }
             case AVCamSetupResultCameraNotAuthorized:
@@ -365,7 +454,7 @@ typedef NS_ENUM( NSInteger, AVCamSetupResult ) {
                         [[UIApplication sharedApplication] openURL:[NSURL URLWithString:UIApplicationOpenSettingsURLString]];
                     }];
                     [alertController addAction:settingsAction];
-                    [self.viewController presentViewController:alertController animated:YES completion:nil];
+                    [wself.viewController presentViewController:alertController animated:YES completion:nil];
                 } );
                 break;
             }
@@ -376,7 +465,7 @@ typedef NS_ENUM( NSInteger, AVCamSetupResult ) {
                     UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"AVCam" message:message preferredStyle:UIAlertControllerStyleAlert];
                     UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:NSLocalizedString( @"OK", @"Alert OK button" ) style:UIAlertActionStyleCancel handler:nil];
                     [alertController addAction:cancelAction];
-                    [self.viewController presentViewController:alertController animated:YES completion:nil];
+                    [wself.viewController presentViewController:alertController animated:YES completion:nil];
                 } );
                 break;
             }
@@ -419,10 +508,21 @@ typedef NS_ENUM( NSInteger, AVCamSetupResult ) {
 
 - (IBAction)snapStillImage:(id)sender
 {
+    if (self.isRecognizing) {
+        return;
+    }
+    if (self.photoIsVisible) {
+        [self hideTakenPhoto];
+        return;
+    }
+    
+    __weak CameraModule *wself = self;
+    
     dispatch_async( self.sessionQueue, ^{
-        
-        AVCaptureConnection *connection = [self.stillImageOutput connectionWithMediaType:AVMediaTypeVideo];
-        AVCaptureVideoPreviewLayer *previewLayer = (AVCaptureVideoPreviewLayer *)self.previewView.layer;
+        wself.takedPhoto.image = nil;
+
+        AVCaptureConnection *connection = [wself.stillImageOutput connectionWithMediaType:AVMediaTypeVideo];
+        AVCaptureVideoPreviewLayer *previewLayer = (AVCaptureVideoPreviewLayer *)wself.previewView.layer;
         
         // Update the orientation on the still image output video connection before capturing.
         connection.videoOrientation = previewLayer.connection.videoOrientation;
@@ -431,12 +531,12 @@ typedef NS_ENUM( NSInteger, AVCamSetupResult ) {
         [CameraModule setFlashMode:AVCaptureFlashModeAuto forDevice:self.videoDeviceInput.device];
         
         // Capture a still image.
-        [self.stillImageOutput captureStillImageAsynchronouslyFromConnection:connection completionHandler:^( CMSampleBufferRef imageDataSampleBuffer, NSError *error ) {
+        [wself.stillImageOutput captureStillImageAsynchronouslyFromConnection:connection completionHandler:^( CMSampleBufferRef imageDataSampleBuffer, NSError *error ) {
             if ( imageDataSampleBuffer ) {
                 // The sample buffer is not retained. Create image data before saving the still image to the photo library asynchronously.
                 NSData *imageData = [AVCaptureStillImageOutput jpegStillImageNSDataRepresentation:imageDataSampleBuffer];
                 UIImage *img = [UIImage imageWithData:imageData];
-                img = [img imageByScalingNotCroppingForSize:(CGSize){self.targetWidth, self.targetHeight}];
+                img = [img imageByScalingNotCroppingForSize:(CGSize){wself.targetWidth, wself.targetHeight}];
                 imageData = UIImageJPEGRepresentation(img, 1);
                 
                 NSString *temporaryFileName = [NSProcessInfo processInfo].globallyUniqueString;
@@ -445,10 +545,11 @@ typedef NS_ENUM( NSInteger, AVCamSetupResult ) {
                 [imageData writeToURL:temporaryFileURL options:NSDataWritingAtomic error:&error];
                 
                 CDVPluginResult *result = nil;
-                result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:[[self urlTransformer:temporaryFileURL] absoluteString]];
+                result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:[[wself urlTransformer:temporaryFileURL] absoluteString]];
                 
                 dispatch_async(dispatch_get_main_queue(), ^{
-                    [self.commandDelegate sendPluginResult:result callbackId:self.callbackId];
+                    [wself imageTaked:img];
+                    [wself.commandDelegate sendPluginResult:result callbackId:wself.callbackId];
                 });
 //                [self closeCam];
             }
@@ -462,10 +563,11 @@ typedef NS_ENUM( NSInteger, AVCamSetupResult ) {
 
 - (void)viewDidDisappear:(BOOL)animated
 {
+    __weak CameraModule *wself = self;
     dispatch_async( self.sessionQueue, ^{
-        if ( self.setupResult == AVCamSetupResultSuccess ) {
-            [self.session stopRunning];
-            [self removeObservers];
+        if ( wself.setupResult == AVCamSetupResultSuccess ) {
+            [wself.session stopRunning];
+            [wself removeObservers];
         }
     } );
     
@@ -500,14 +602,15 @@ typedef NS_ENUM( NSInteger, AVCamSetupResult ) {
 
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context
 {
+    __weak CameraModule *wself = self;
     if ( context == CapturingStillImageContext ) {
         BOOL isCapturingStillImage = [change[NSKeyValueChangeNewKey] boolValue];
         
         if ( isCapturingStillImage ) {
             dispatch_async( dispatch_get_main_queue(), ^{
-                self.previewView.layer.opacity = 0.0;
+                wself.previewView.layer.opacity = 0.0;
                 [UIView animateWithDuration:0.25 animations:^{
-                    self.previewView.layer.opacity = 1.0;
+                    wself.previewView.layer.opacity = 1.0;
                 }];
             } );
         }

@@ -4,6 +4,7 @@
 @interface CameraModule : CDVPlugin  
 
 - (void)getPicture:(CDVInvokedUrlCommand *)command;
+- (void)pictureRecognized:(id)something;
 
 @end
 
