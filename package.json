@@ -4,7 +4,8 @@
   "cordova": {
     "id": "ionic-camera",
     "platforms": [
-      "ios"
+      "ios",
+      "android"
     ]
   },
   "description": "Ionic Camera Module",
@@ -14,6 +15,7 @@
     "ionic",
     "cordova",
     "cordova-ios",
+    "cordova-android"
   ],
   "author": "Dmitry Klepitsky",
   "license": "Apache 2.0"
