@@ -224,7 +224,7 @@ public class CameraLauncher extends CordovaPlugin implements SensorEventListener
 		imageViewLP.height = WindowManager.LayoutParams.WRAP_CONTENT;
 		imageView.setScaleType(ImageView.ScaleType.CENTER);
 		imageView.setLayoutParams(imageViewLP);
-		imageView.setImageResource(cordova.getActivity().getResources().getIdentifier("drawable.back", "drawable", cordova.getActivity().getPackageName()));
+		imageView.setImageResource(cordova.getActivity().getResources().getIdentifier("back", "drawable", cordova.getActivity().getPackageName()));
 		backLayout.addView(imageView);
 		linearLayout.addView(backLayout);
 

@@ -42,7 +42,7 @@
         </js-module>
         <config-file target="config.xml" parent="/*">
             <feature name="CameraModule">
-                <param name="android-package" value="cordova.plugins.CameraModule.CameraLauncher" onload="true"/>
+                <param name="android-package" value="cordova.plugins.CameraModule.CameraLauncher" />
                 <param name="onload" value="true" />
             </feature>
         </config-file>
