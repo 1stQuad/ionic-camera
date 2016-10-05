@@ -23,8 +23,6 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import com.peaches.retina.R;
-
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.LOG;
@@ -226,7 +224,7 @@ public class CameraLauncher extends CordovaPlugin implements SensorEventListener
 		imageViewLP.height = WindowManager.LayoutParams.WRAP_CONTENT;
 		imageView.setScaleType(ImageView.ScaleType.CENTER);
 		imageView.setLayoutParams(imageViewLP);
-		imageView.setImageResource(R.drawable.back);
+		imageView.setImageResource(cordova.getActivity().getResources().getIdentifier("drawable.back", "drawable", cordova.getActivity().getPackageName()));
 		backLayout.addView(imageView);
 		linearLayout.addView(backLayout);
 
@@ -267,7 +265,7 @@ public class CameraLauncher extends CordovaPlugin implements SensorEventListener
 		imageView1LP.height = WindowManager.LayoutParams.MATCH_PARENT;
 		imageView1.setPadding(20, 20, 20, 20);
 		imageView1.setLayoutParams(imageView1LP);
-		imageView1.setImageResource(R.drawable.money_frame_2);
+		imageView1.setImageResource(cordova.getActivity().getResources().getIdentifier("money_frame_2", "drawable", cordova.getActivity().getPackageName()));
 		frameLayout1.addView(imageView1);
 
 		frameLayout.addView(frameLayout1);
