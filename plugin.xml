@@ -34,4 +34,27 @@
         <resource-file src="src/ios/backButtonWhiteArrow@2x.png" />
     </platform>
 
+    <!-- android -->
+    <platform name="android">
+        <js-module src="www/android/camera-module.js" name="camera-module">
+            <runs/>
+            <clobbers target="cordova.plugins.CameraModule" />
+        </js-module>
+        <config-file target="config.xml" parent="/*">
+            <feature name="CameraModule">
+                <param name="android-package" value="CameraModule" onload="true"/>
+            </feature>
+        </config-file>
+        <config-file target="AndroidManifest.xml" parent="/*">
+            <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+            <uses-permission android:name="android.permission.CAMERA" />
+        </config-file>
+
+        <source-file src="src/android/CameraModule.java"/>
+        <source-file src="src/android/Preview.java"/>
+        <resource-file src="src/android/back.png" target-dir="res/drawable-xhdpi/back.png"/>
+        <resource-file src="src/android/money_frame_2.png" target-dir="res/drawable-xhdpi/money_frame_2.png"/>
+
+     </platform>
+
 </plugin>
