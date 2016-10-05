@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
+        xmlns:android="http://schemas.android.com/apk/res/android"
     id="ionic-camera-module"
     version="1">
     <name>CameraModule</name>
@@ -53,8 +54,8 @@
 
         <source-file src="src/android/CameraLauncher.java" target-dir="src/cordova/plugins/CameraModule"/>
         <source-file src="src/android/Preview.java" target-dir="src/cordova/plugins/CameraModule"/>
-        <resource-file src="src/android/back.png" target-dir="res/drawable-xhdpi"/>
-        <resource-file src="src/android/money_frame_2.png" target-dir="res/drawable-xhdpi"/>
+        <resource-file src="src/android/back.png" target="res/drawable-xhdpi/back.png"/>
+        <resource-file src="src/android/money_frame_2.png" target="res/drawable-xhdpi/money_frame_2.png"/>
 
      </platform>
 
