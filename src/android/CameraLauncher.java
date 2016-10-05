@@ -310,6 +310,9 @@ public class CameraLauncher extends CordovaPlugin implements SensorEventListener
 				cameraScene.dismiss();
 				CameraLauncher.this.cordova.getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 				CameraLauncher.this.cordova.getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
+				if (progress != null) {
+					progress.dismiss();
+				}
 				releaseCamera();
 			}
 		});
