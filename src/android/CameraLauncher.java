@@ -408,7 +408,8 @@ public class CameraLauncher extends CordovaPlugin implements SensorEventListener
 	public Bundle onSaveInstanceState() {
 		Bundle state = new Bundle();
 		mSensorManager.unregisterListener(this);
-		releaseCamera();
+		failPicture("cancelled");
+		closeCameraScene();
 
 		return state;
 	}
