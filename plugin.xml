@@ -13,7 +13,7 @@
 
     <!-- ios -->
     <platform name="ios">
-        <js-module src="www/ios/camera-module.js" name="camera-module">
+        <js-module src="www/android/camera-module.js" name="camera-module">
             <runs/>
             <clobbers target="cordova.plugins.CameraModule" />
         </js-module>
