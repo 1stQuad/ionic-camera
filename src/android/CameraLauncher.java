@@ -1,6 +1,7 @@
 package cordova.plugins.CameraModule;
 
 import android.Manifest;
+import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.pm.ActivityInfo;
@@ -54,7 +55,7 @@ public class CameraLauncher extends CordovaPlugin implements SensorEventListener
 
 			File file = saveImage(data);
 			if (file != null) {
-				URI uri = saveImage(data).toURI();
+				URI uri = file.toURI();
 
 				CameraLauncher.this.callbackContext.success(uri.toString());
 
@@ -81,6 +82,7 @@ public class CameraLauncher extends CordovaPlugin implements SensorEventListener
 	private TextView mMessageText;
 	private FrameLayout backLayout;
 	private FrameLayout preview;
+	private Dialog cameraScene;
 	private Boolean fixedImage = false;
 	private Boolean imageActive = true;
 
@@ -197,7 +199,7 @@ public class CameraLauncher extends CordovaPlugin implements SensorEventListener
 	protected void createView() {
 
 		final FrameLayout baseFrame = new FrameLayout(this.cordova.getActivity().getApplicationContext());
-		FrameLayout.LayoutParams baseFrameLP = new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT);
+		final FrameLayout.LayoutParams baseFrameLP = new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT);
 		baseFrame.setBackgroundColor(Color.parseColor("#FFFFFF"));
 		baseFrame.setLayoutParams(baseFrameLP);
 
@@ -274,7 +276,9 @@ public class CameraLauncher extends CordovaPlugin implements SensorEventListener
 
 		cordova.getActivity().runOnUiThread(new Runnable() {
 			public void run() {
-				CameraLauncher.this.cordova.getActivity().setContentView(baseFrame);
+				cameraScene = new Dialog(CameraLauncher.this.cordova.getActivity(), android.R.style.Theme_Black_NoTitleBar_Fullscreen);
+				cameraScene.addContentView(baseFrame, baseFrameLP);
+				cameraScene.show();
 				CameraLauncher.this.cordova.getActivity().getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 				CameraLauncher.this.cordova.getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 			}
@@ -286,6 +290,7 @@ public class CameraLauncher extends CordovaPlugin implements SensorEventListener
 			@Override
 			public void onClick(View arg0) {
 				failPicture("cancelled");
+				closeCameraScene();
 			}
 		});
 
@@ -297,6 +302,20 @@ public class CameraLauncher extends CordovaPlugin implements SensorEventListener
 		} else {
 			hasLightSensor = false;
 		}
+	}
+
+	private void closeCameraScene() {
+		cordova.getActivity().runOnUiThread(new Runnable() {
+			public void run() {
+				cameraScene.dismiss();
+				CameraLauncher.this.cordova.getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+				CameraLauncher.this.cordova.getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
+				if (progress != null) {
+					progress.dismiss();
+				}
+				releaseCamera();
+			}
+		});
 	}
 
 	private void addPreview() {
@@ -392,7 +411,8 @@ public class CameraLauncher extends CordovaPlugin implements SensorEventListener
 	public Bundle onSaveInstanceState() {
 		Bundle state = new Bundle();
 		mSensorManager.unregisterListener(this);
-		releaseCamera();
+		failPicture("cancelled");
+		closeCameraScene();
 
 		return state;
 	}
