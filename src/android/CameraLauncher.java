@@ -56,7 +56,6 @@ public class CameraLauncher extends CordovaPlugin implements SensorEventListener
 			File file = saveImage(data);
 			if (file != null) {
 				URI uri = file.toURI();
-
 				CameraLauncher.this.callbackContext.success(uri.toString());
 
 				LOG.d(LOG_TAG, uri.toString());
@@ -324,6 +323,12 @@ public class CameraLauncher extends CordovaPlugin implements SensorEventListener
 				// Create an instance of Camera
 				if (mCamera == null)
 					mCamera = getCameraInstance();
+
+				if (mCamera == null) {
+					failPicture("Camera is not available");
+					closeCameraScene();
+					return;
+				}
 
 				// Create our Preview view and set it as the content of our activity.
 				mPreview = new Preview(CameraLauncher.this.cordova.getActivity(), CameraLauncher.this.cordova.getActivity().getApplicationContext(), mCamera, true, true);
