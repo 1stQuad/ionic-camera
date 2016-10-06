@@ -65,7 +65,7 @@ public class CameraLauncher extends CordovaPlugin implements SensorEventListener
 		public void onPictureTaken(byte[] data, Camera camera) {
 
 			File file = saveImage(data);
-			if (file != null) {
+			if (file != null && file.exists()) {
 				URI uri = file.toURI();
 				PluginResult result = new PluginResult(PluginResult.Status.OK, uri.toString());
 				result.setKeepCallback(true);
@@ -81,6 +81,7 @@ public class CameraLauncher extends CordovaPlugin implements SensorEventListener
 					}
 				});
 			} else {
+				failPicture("File is not available");
 				CameraLauncher.this.closeCameraScene();
 			}
 		}
@@ -372,14 +373,15 @@ public class CameraLauncher extends CordovaPlugin implements SensorEventListener
 	}
 
 	private File saveImage(byte[] data) {
-		File imagesFolder = new File(Environment.getExternalStorageDirectory(), "/novartis");
-		imagesFolder.mkdirs();
-		String fileName = "object.jpg";
-		File output = new File(imagesFolder, fileName);
 		try {
+			File imagesFolder = new File(Environment.getExternalStorageDirectory(), "/novartis");
+			imagesFolder.mkdirs();
+			String fileName = "object.jpg";
+			File output = new File(imagesFolder, fileName);
 			FileOutputStream fos = new FileOutputStream(output);
 			fos.write(data);
 			fos.close();
+			return new File(imagesFolder + "/" + fileName);
 		} catch (FileNotFoundException e) {
 			LOG.d(LOG_TAG, "saveImage ex: " + e.getMessage());
 			this.failPicture("saveImage ex: " + e.getMessage());
@@ -387,7 +389,7 @@ public class CameraLauncher extends CordovaPlugin implements SensorEventListener
 			LOG.d(LOG_TAG, "saveImage ex: " + e.getMessage());
 			this.failPicture("saveImage ex: " + e.getMessage());
 		}
-		return new File(imagesFolder + "/" + fileName);
+		return null;
 	}
 
 	private void releaseCamera() {
