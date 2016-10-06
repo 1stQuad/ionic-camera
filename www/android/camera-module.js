@@ -8,11 +8,11 @@ var CameraModule = function() {
 };
 
 CameraModule.getPicture = function(successCallback, errorCallback) {
-  exec(successCallback, errorCallback, "CameraLauncher", "getPicture", []);
+  exec(successCallback, errorCallback, "CameraModule", "getPicture", []);
 };
 
 CameraModule.pictureRecognized = function () {
-    exec(null, null, "CameraLauncher", "pictureRecognized", []);
+    exec(null, null, "CameraModule", "pictureRecognized", []);
 };
 
 module.exports = CameraModule;
