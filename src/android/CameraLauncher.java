@@ -48,30 +48,6 @@ public class CameraLauncher extends CordovaPlugin implements SensorEventListener
 	private static final String LOG_TAG = "CameraLauncher";
 	public CallbackContext callbackContext;
 	ProgressDialog progress;
-	Camera.PictureCallback myPictureCallback_JPG = new Camera.PictureCallback() {
-
-		@Override
-		public void onPictureTaken(byte[] data, Camera camera) {
-
-			File file = saveImage(data);
-			if (file != null) {
-				URI uri = file.toURI();
-
-				CameraLauncher.this.callbackContext.success(uri.toString());
-
-				LOG.d(LOG_TAG, uri.toString());
-			}
-
-			final String pleaseWait = "Please wait while processing the image";
-
-			cordova.getActivity().runOnUiThread(new Runnable() {
-				public void run() {
-					progress = ProgressDialog.show(CameraLauncher.this.cordova.getActivity(), "", pleaseWait, true);
-				}
-			});
-
-		}
-	};
 	private Preview mPreview;
 	private Camera mCamera;
 	private SensorManager mSensorManager;
@@ -83,6 +59,32 @@ public class CameraLauncher extends CordovaPlugin implements SensorEventListener
 	private FrameLayout backLayout;
 	private FrameLayout preview;
 	private Dialog cameraScene;
+	Camera.PictureCallback myPictureCallback_JPG = new Camera.PictureCallback() {
+
+		@Override
+		public void onPictureTaken(byte[] data, Camera camera) {
+
+			File file = saveImage(data);
+			if (file != null) {
+				URI uri = file.toURI();
+				PluginResult result = new PluginResult(PluginResult.Status.OK, uri.toString());
+				result.setKeepCallback(true);
+				CameraLauncher.this.callbackContext.sendPluginResult(result);
+
+				LOG.d(LOG_TAG, uri.toString());
+
+				final String pleaseWait = "Please wait while processing the image";
+
+				cordova.getActivity().runOnUiThread(new Runnable() {
+					public void run() {
+						progress = ProgressDialog.show(CameraLauncher.this.cordova.getActivity(), "", pleaseWait, true);
+					}
+				});
+			} else {
+				CameraLauncher.this.closeCameraScene();
+			}
+		}
+	};
 	private Boolean fixedImage = false;
 	private Boolean imageActive = true;
 
@@ -101,15 +103,9 @@ public class CameraLauncher extends CordovaPlugin implements SensorEventListener
 
 	@Override
 	public boolean execute(String action, JSONArray data, CallbackContext callbackContext) throws JSONException {
-		this.callbackContext = callbackContext;
-
 		if (action.equals("getPicture")) {
+			this.callbackContext = callbackContext;
 			createView();
-
-			PluginResult r = new PluginResult(PluginResult.Status.NO_RESULT);
-			r.setKeepCallback(true);
-			callbackContext.sendPluginResult(r);
-
 			return true;
 		} else if (action.equals("pictureRecognized")) {
 			if (progress != null) {
@@ -325,6 +321,12 @@ public class CameraLauncher extends CordovaPlugin implements SensorEventListener
 				if (mCamera == null)
 					mCamera = getCameraInstance();
 
+				if (mCamera == null) {
+					failPicture("Camera is not available");
+					closeCameraScene();
+					return;
+				}
+
 				// Create our Preview view and set it as the content of our activity.
 				mPreview = new Preview(CameraLauncher.this.cordova.getActivity(), CameraLauncher.this.cordova.getActivity().getApplicationContext(), mCamera, true, true);
 				preview.addView(mPreview);
@@ -385,7 +387,6 @@ public class CameraLauncher extends CordovaPlugin implements SensorEventListener
 			LOG.d(LOG_TAG, "saveImage ex: " + e.getMessage());
 			this.failPicture("saveImage ex: " + e.getMessage());
 		}
-
 		return new File(imagesFolder + "/" + fileName);
 	}
 
