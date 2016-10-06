@@ -70,7 +70,7 @@ public class CameraLauncher extends CordovaPlugin implements SensorEventListener
 				PluginResult result = new PluginResult(PluginResult.Status.OK, uri.toString());
 				result.setKeepCallback(true);
 				CameraLauncher.this.callbackContext.sendPluginResult(result);
-				
+
 				LOG.d(LOG_TAG, uri.toString());
 
 				final String pleaseWait = "Please wait while processing the image";
@@ -103,15 +103,9 @@ public class CameraLauncher extends CordovaPlugin implements SensorEventListener
 
 	@Override
 	public boolean execute(String action, JSONArray data, CallbackContext callbackContext) throws JSONException {
-		this.callbackContext = callbackContext;
-
 		if (action.equals("getPicture")) {
+			this.callbackContext = callbackContext;
 			createView();
-
-			PluginResult r = new PluginResult(PluginResult.Status.NO_RESULT);
-			r.setKeepCallback(true);
-			callbackContext.sendPluginResult(r);
-
 			return true;
 		} else if (action.equals("pictureRecognized")) {
 			if (progress != null) {
