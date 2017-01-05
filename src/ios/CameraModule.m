@@ -80,6 +80,11 @@ typedef NS_ENUM( NSInteger, AVCamSetupResult ) {
 
     [self stopSpining];
 }
+    
+- (void)closeCameraScene:(id)something
+{
+    [self backPressed];
+}
 
 - (void)backPressed
 {
@@ -133,8 +138,13 @@ typedef NS_ENUM( NSInteger, AVCamSetupResult ) {
     
     UIViewController *vc = [[UIViewController alloc] init];
     
-    vc.view = [[CameraModuleView alloc] initWithFrame:self.viewController.view.frame];
-    self.previewView = (CameraModuleView *) vc.view;
+    vc.view = [[UIView alloc] initWithFrame:self.viewController.view.frame];
+    CameraModuleView *mv = [[CameraModuleView alloc] initWithFrame:self.viewController.view.frame];
+    [vc.view addSubview:mv];
+    [mv setIsAccessibilityElement:YES];
+    self.previewView = mv;
+    mv.translatesAutoresizingMaskIntoConstraints = NO;
+//    vc.view.translatesAutoresizingMaskIntoConstraints = NO;
     [vc.view addGestureRecognizer:[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(snapStillImage:)]];
     
     
@@ -142,6 +152,30 @@ typedef NS_ENUM( NSInteger, AVCamSetupResult ) {
     self.camFrame = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"moneyFrame.png"]];
     [self.camFrame setUserInteractionEnabled:NO];
 
+    
+    //setup navigation bar
+    UINavigationBar *myNav = [[UINavigationBar alloc] init];
+    [vc.view addSubview:myNav];
+    
+    //        UINavigationBar *myNav = [[UINavigationBar alloc]initWithFrame:CGRectMake(0, 0, 320, 55)];
+    [UINavigationBar appearance].barTintColor = [UIColor blackColor];
+//    [wself.previewView addSubview:myNav];
+    myNav.translatesAutoresizingMaskIntoConstraints = NO;
+    
+    
+    UIBarButtonItem *cancelItem = [[UIBarButtonItem alloc] initWithTitle:NSLocalizedString(@"Back", @"nav bar button label")
+                                                                   style:UIBarButtonItemStylePlain
+                                                                  target:wself
+                                                                  action:@selector(backPressed)];
+    cancelItem.image = [UIImage imageNamed:@"backButtonWhiteArrow.png"];
+    UINavigationItem *navigItem = [[UINavigationItem alloc] initWithTitle:@""];
+    
+    
+    navigItem.leftBarButtonItem = cancelItem;
+    myNav.items = [NSArray arrayWithObjects: navigItem,nil];
+    cancelItem.tintColor = [UIColor whiteColor];
+    
+    [UIBarButtonItem appearance].tintColor = [UIColor whiteColor];
     
     
     [self.viewController presentViewController:vc animated:YES completion:^{
@@ -190,39 +224,18 @@ typedef NS_ENUM( NSInteger, AVCamSetupResult ) {
         
         
         
-        //setup navigation bar
-        UINavigationBar *myNav = [[UINavigationBar alloc] init];
 
-//        UINavigationBar *myNav = [[UINavigationBar alloc]initWithFrame:CGRectMake(0, 0, 320, 55)];
-        [UINavigationBar appearance].barTintColor = [UIColor blackColor];
-        [wself.previewView addSubview:myNav];
-        myNav.translatesAutoresizingMaskIntoConstraints = NO;
-        
-        
-        UIBarButtonItem *cancelItem = [[UIBarButtonItem alloc] initWithTitle:NSLocalizedString(@"Back", @"nav bar button label")
-                                                                       style:UIBarButtonItemStylePlain
-                                                                      target:wself
-                                                                      action:@selector(backPressed)];
-        cancelItem.image = [UIImage imageNamed:@"backButtonWhiteArrow.png"];
-        UINavigationItem *navigItem = [[UINavigationItem alloc] initWithTitle:@""];
-
-        
-        navigItem.leftBarButtonItem = cancelItem;
-        myNav.items = [NSArray arrayWithObjects: navigItem,nil];
-        cancelItem.tintColor = [UIColor whiteColor];
-        
-        [UIBarButtonItem appearance].tintColor = [UIColor whiteColor];
         
         CGFloat navigationBarHeight = 55.f;// + [UIApplication sharedApplication].statusBarFrame.size.height;
         [vc.view addConstraints: @[
-                                     [NSLayoutConstraint constraintWithItem: vc.view
+                                     [NSLayoutConstraint constraintWithItem: wself.previewView
                                                                   attribute: NSLayoutAttributeLeft
                                                                   relatedBy: NSLayoutRelationEqual
                                                                      toItem: myNav
                                                                   attribute: NSLayoutAttributeLeft
                                                                  multiplier: 1.0
                                                                    constant: 0.0],
-                                     [NSLayoutConstraint constraintWithItem: vc.view
+                                     [NSLayoutConstraint constraintWithItem: wself.previewView
                                                                   attribute: NSLayoutAttributeRight
                                                                   relatedBy: NSLayoutRelationEqual
                                                                      toItem: myNav
@@ -243,8 +256,40 @@ typedef NS_ENUM( NSInteger, AVCamSetupResult ) {
                                                                   attribute: NSLayoutAttributeNotAnAttribute
                                                                  multiplier: 1.0
                                                                    constant: navigationBarHeight],
-                                     ]];
+                                     ]
+         ];
         
+        [wself.previewView.superview addConstraints: @[
+                                   [NSLayoutConstraint constraintWithItem: wself.previewView
+                                                                attribute: NSLayoutAttributeLeft
+                                                                relatedBy: NSLayoutRelationEqual
+                                                                   toItem: wself.previewView.superview
+                                                                attribute: NSLayoutAttributeLeft
+                                                               multiplier: 1.0
+                                                                 constant: 0.0],
+                                   [NSLayoutConstraint constraintWithItem: wself.previewView
+                                                                attribute: NSLayoutAttributeRight
+                                                                relatedBy: NSLayoutRelationEqual
+                                                                   toItem: wself.previewView.superview
+                                                                attribute: NSLayoutAttributeRight
+                                                               multiplier: 1.0
+                                                                 constant: 0.0],
+                                   [NSLayoutConstraint constraintWithItem: wself.previewView
+                                                                attribute: NSLayoutAttributeTop
+                                                                relatedBy: NSLayoutRelationEqual
+                                                                   toItem: wself.previewView.superview
+                                                                attribute: NSLayoutAttributeTop
+                                                               multiplier: 1.0
+                                                                 constant: 0.0],
+                                   [NSLayoutConstraint constraintWithItem: wself.previewView
+                                                                attribute: NSLayoutAttributeBottom
+                                                                relatedBy: NSLayoutRelationEqual
+                                                                   toItem: wself.previewView.superview
+                                                                attribute: NSLayoutAttributeBottom
+                                                               multiplier: 1.0
+                                                                 constant: 0.0],
+                                   ]
+         ];
 
     }];
     
