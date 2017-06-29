@@ -73,7 +73,7 @@ public class CameraLauncher extends CordovaPlugin implements SensorEventListener
 
 				LOG.d(LOG_TAG, uri.toString());
 
-				final String pleaseWait = "Please wait while processing the image";
+				final String pleaseWait = "";
 
 				cordova.getActivity().runOnUiThread(new Runnable() {
 					public void run() {

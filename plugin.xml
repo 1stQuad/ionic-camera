@@ -33,6 +33,13 @@
         <resource-file src="src/ios/moneyFrame@2x.png" />
         <resource-file src="src/ios/backButtonWhiteArrow.png" />
         <resource-file src="src/ios/backButtonWhiteArrow@2x.png" />
+		<resource-file src="src/ios/i18n/en.lproj/"/>
+		<resource-file src="src/ios/i18n/de.lproj/" />
+		<resource-file src="src/ios/i18n/fr.lproj/" />
+		<resource-file src="src/ios/i18n/it.lproj/" />
+		<resource-file src="src/ios/i18n/pt.lproj/" />
+		<resource-file src="src/ios/i18n/zh.lproj/" />
+		<resource-file src="src/ios/i18n/es.lproj/" />
     </platform>
 
     <!-- android -->
